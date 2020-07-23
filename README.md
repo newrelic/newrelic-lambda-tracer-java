@@ -4,20 +4,20 @@
 
 The New Relic Lambda Tracer is an OpenTracing [Tracer](https://opentracing.io/docs/overview/tracers/) implementation specifically designed to instrument Java-based AWS Lambda functions. The New Relic Lambda Tracer is intended to work in conjunction with the [AWS Lambda OpenTracing Java SDK](https://github.com/newrelic/java-aws-lambda).
 
-It generates the following data in AWS Cloudwatch logs which is then scraped by a [log ingestion Lambda function](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda#stream-logs) and sent to New Relic's telemetry data platform:
+It generates the following data in AWS Cloudwatch logs which, is then scraped by a [log ingestion Lambda function](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda#stream-logs) and sent to New Relic's telemetry data platform:
 
-- Span Events
-- Transaction Events
-- Error Events
-- Traced Errors
+- Span events
+- Transaction events
+- Error events
+- Traced errors
 
 Currently, the New Relic Lambda Tracer does not generate data types such as metrics or transaction traces.
 
 ## Installation
 
-Artifacts for the [New Relic OpenTracing AWS Lambda Tracer](https://search.maven.org/search?q=a:newrelic-java-lambda) and [AWS Lambda OpenTracing Java SDK](https://search.maven.org/search?q=a:java-aws-lambda) can be found on Maven Central.
+You can find artifacts for the [New Relic OpenTracing AWS Lambda Tracer](https://search.maven.org/search?q=a:newrelic-java-lambda) and [AWS Lambda OpenTracing Java SDK](https://search.maven.org/search?q=a:java-aws-lambda) on Maven Central.
 
-Below is an example showing how to add them as dependencies in your `build.gradle` file:
+The example below shows how to add them as dependencies in your `build.gradle` file:
 
 ```groovy
 dependencies {
@@ -89,7 +89,7 @@ The New Relic Lambda Tracer follows OpenTracing [semantic conventions](https://g
 | `error.object` | `Throwable`             | The `Throwable` object                           |   Yes    |
 | `message`      | `Throwable` message     | The detail message string of the throwable       |   Yes    |
 | `event`        | `String` `"error"`      | Indicates that an error event has occurred       | Optional |
-| `stack`        | `Throwable` stacktrace  | The the stack trace information of the throwable | Optional |
+| `stack`        | `Throwable` stacktrace  | The stack trace information of the throwable | Optional |
 | `error.kind`   | `String` `"Exception"`  | Indicates that the error was an `Exception`      | Optional |
 
 ## Building
@@ -103,9 +103,9 @@ Artifact: `newrelic-lambda-tracer-java/build/libs/newrelic-java-lambda.jar`
 * Unit tests: `newrelic-lambda-tracer-java/src/test`
 * JMH benchmarks: `newrelic-lambda-tracer-java/src/jmh`
   * Run JMH benchmarks: `./gradlew jmh`  
-  * Results can be found in `build/reports/jmh`
+  * Find results in `build/reports/jmh`
 
-Please ensure that tests are included for any new functionality and that all test suites are passing when submitting a pull request. 
+When submitting a pull request, please ensure that tests are included for any new functionality and that all test suites are passing.
 
 ## Example JSON logged to AWS Cloudwatch
 
@@ -127,7 +127,7 @@ The New Relic Lambda Tracer logs a JSON payload to AWS Cloudwatch logs upon comp
 ]
 ```
 
-Additionally, debug logging can be used to log the uncompressed payloads as seen in the below example.
+Additionally, you can use debug logging to log the uncompressed payloads, as seen in the below example.
 
 To enable debug logging set the `NEW_RELIC_DEBUG` environment variable to `true` in the AWS Lambda console for a given function. 
 
