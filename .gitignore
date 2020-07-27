@@ -2,15 +2,11 @@ bin/
 build/
 out/
 reports/
-out/
 .classpath
 .project
 .settings
 .gradle
 .metadata
-derbyDB
-pyvenv.cfg
-test_database*
 *.log
 .emacs.*
 .lock
@@ -20,7 +16,6 @@ test_database*
 *.iws
 *.ipr
 *.iml
-/out/
 /.settings/
 .idea
 .shelf

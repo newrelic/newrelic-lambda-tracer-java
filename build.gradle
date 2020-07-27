@@ -1,104 +1,108 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        maven {
-            url 'https://jcenter.bintray.com'
-        }
-    }
-    dependencies {
-        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
-    }
-}
-
 plugins {
-    id 'java'
+    id("java-library")
+    id("maven-publish")
+    id("signing")
     id "me.champeau.gradle.jmh" version "0.5.0"
 }
 
-apply plugin: 'java'
-apply plugin: 'com.bmuschko.nexus'
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    withSourcesJar()
+    withJavadocJar()
+}
 
 repositories {
     mavenCentral()
 }
 
-project.configurations.configure {
-    "sonatype"() {
-        extendsFrom archives
-    }
-}
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+// -Prelease=true will render a non-snapshot version
+// All other values (including unset) will render a snapshot version.
+def release = findProperty("release")
+version = "2.1.0" + (release ? "" : "-SNAPSHOT")
+group = "com.newrelic.opentracing"
 
 dependencies {
-    implementation('io.opentracing:opentracing-api:0.33.0')
-    implementation('io.opentracing:opentracing-util:0.33.0')
-    implementation('io.opentracing:opentracing-noop:0.33.0')
-    implementation('com.googlecode.json-simple:json-simple:1.1.1')
+    implementation("io.opentracing:opentracing-api:0.33.0")
+    implementation("io.opentracing:opentracing-util:0.33.0")
+    implementation("io.opentracing:opentracing-noop:0.33.0")
+    implementation("com.googlecode.json-simple:json-simple:1.1.1")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.2")
 
-    jmh 'io.opentracing:opentracing-mock:0.33.0'
+    jmh "io.opentracing:opentracing-mock:0.33.0"
 }
 
 jar {
-    from(projectDir) { include "README.md" }
+    from("README.md")
+    from("LICENSE")
 
     manifest {
-        attributes 'Implementation-Title': 'New Relic OpenTracing Lambda Tracer',
-                'Implementation-Version': project.version,
-                'Implementation-Vendor' : "New Relic, Inc",
-                'Created-By': 'New Relic, Inc',
-                'Built-Date': new Date(),
-                'Specification-Version': project.version,
-                'Build-Id': System.getProperty('BUILD_ID') || "None"
+        attributes "Implementation-Title": "New Relic OpenTracing Lambda Tracer",
+                "Implementation-Version": project.version,
+                "Implementation-Vendor" : "New Relic, Inc",
+                "Created-By": "New Relic, Inc",
+                "Built-Date": new Date(),
+                "Specification-Version": project.version,
+                "Build-Id": System.getProperty("BUILD_ID") || "None"
     }
 }
 
-task uploadSonatype(type: Upload) {
-    configuration = configurations.sonatype
-    uploadDescriptor = true
+tasks.withType(GenerateModuleMetadata.class) {
+    enabled = false
 }
 
-nexus {
-    sign = true
-    configuration = "sonatype"
-}
+publishing {
+    repositories {
+        maven {
+            def releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            def snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+            url = version.endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = System.getenv("SONATYPE_USERNAME")
+                password = System.getenv("SONATYPE_PASSWORD")
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from(components.java)
+            pom {
+                name = "New Relic OpenTracing Lambda Tracer"
+                description = "New Relic OpenTracing Tracer implementation for instrumenting AWS Lambda functions."
+                url = "https://github.com/newrelic/newrelic-lambda-tracer-java"
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "newrelic"
+                        name = "New Relic"
+                        email = "opensource@newrelic.com"
+                    }
+                }
+                scm {
+                    url = "git@github.com:newrelic/newrelic-lambda-tracer-java.git"
+                    connection = "scm:git@github.com:newrelic/newrelic-lambda-tracer-java.git"
+                }
+            }
+        }
 
-uploadSonatype.doFirst {
-    configuration.artifacts.each {
-        println(project.name + " uploading: " + it)
     }
 }
 
-task customSourcesJar(type: Jar) {
-    classifier = 'sources'
-    from(projectDir) { include "README.md" }
-    from(sourceSets.main.allSource)
-
-    manifest {
-        attributes 'Implementation-Title': 'New Relic OpenTracing Lambda Tracer Sources',
-                'Implementation-Version': project.version,
-                'Implementation-Vendor' : "New Relic, Inc",
-                'Created-By': 'New Relic, Inc',
-                'Built-Date': new Date(),
-                'Specification-Version': project.version,
-                'Build-Id': System.getProperty('BUILD_ID') || "None"
-    }
-}
-
-artifacts {
-    archives customSourcesJar
-}
-
-extraArchive {
-    sources = false
+signing {
+    def signingKeyId = findProperty("signingKeyId")
+    def signingKey = findProperty("signingKey")
+    def signingPassword = findProperty("signingPassword")
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    setRequired({ gradle.taskGraph.hasTask("uploadArchives") })
+    sign publishing.publications["mavenJava"]
 }
 
 test {
@@ -106,75 +110,18 @@ test {
     testLogging {
         showStandardStreams = true
     }
-}
-
-uploadArchives.mustRunAfter test
-uploadSonatype.mustRunAfter test
-
-nexus {
-    configuration = "sonatype"
-}
-
-uploadSonatype.doFirst {
-    configuration.artifacts.each { println project.name + " uploading: " + it }
-}
-
-apply plugin: "me.champeau.gradle.jmh"
-
-jmh {
-    jmhVersion = '1.21'
-    jvmArgs = ['-server']
-    fork = 1
-    iterations = 1
-    warmupIterations = 1
-    duplicateClassesStrategy = 'warn' // https://github.com/melix/jmh-gradle-plugin#duplicate-dependencies-and-classes
-    resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
-    humanOutputFile = project.file("${project.buildDir}/reports/jmh/human.txt")
-}
-
-test {
     environment "NEW_RELIC_ACCOUNT_ID", "account"
     environment "NEW_RELIC_TRUSTED_ACCOUNT_KEY", "trustKey"
     environment "NEW_RELIC_PRIMARY_APPLICATION_ID", "primaryApp"
 }
 
-def customizePom(pom, nameIn, descriptionIn) {
-    pom.project {
-        url 'https://newrelic.com/'
-        name nameIn
-        description descriptionIn
-
-        licenses {
-            license { url 'https://newrelic.com/docs/java/java-agent-license' } // TODO change this?
-        }
-
-        scm {
-            url "git@github.com:newrelic/newrelic-lambda-tracer-java.git"
-            connection "scm:git:git@github.com:newrelic/newrelic-lambda-tracer-java.git"
-        }
-
-        developers {
-            developer {
-                id 'newrelic'
-                name 'New Relic'
-                email 'opensource@newrelic.com'
-            }
-        }
-    }
-}
-
-// For internal deploys (e.g. - releaseInternal)
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            project.customizePom(pom, 'New Relic OpenTracing Lambda Tracer',
-                    'New Relic OpenTracing Tracer implementation for instrumenting AWS Lambda functions.')
-        }
-    }
-}
-
-// For external deploys (e.g. - release)
-modifyPom { pom ->
-    customizePom(pom, 'New Relic OpenTracing Lambda Tracer',
-            'New Relic OpenTracing Tracer implementation for instrumenting AWS Lambda functions.')
+jmh {
+    jmhVersion = "1.21"
+    jvmArgs = ["-server"]
+    fork = 1
+    iterations = 1
+    warmupIterations = 1
+    duplicateClassesStrategy = DuplicatesStrategy.WARN // see why: https://github.com/melix/jmh-gradle-plugin#duplicate-dependencies-and-classes
+    resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
+    humanOutputFile = project.file("${project.buildDir}/reports/jmh/human.txt")
 }
