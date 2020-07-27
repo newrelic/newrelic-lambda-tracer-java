@@ -1,60 +1,47 @@
+[![Community Project header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Community_Project.png)](https://opensource.newrelic.com/oss-category/#community-project)
+
 # New Relic OpenTracing Tracer for AWS Lambda Java
 
-## Purpose
+The New Relic Lambda Tracer is an OpenTracing [Tracer](https://opentracing.io/docs/overview/tracers/) implementation specifically designed to instrument Java-based AWS Lambda functions. The New Relic Lambda Tracer is intended to work in conjunction with the [AWS Lambda OpenTracing Java SDK](https://github.com/newrelic/java-aws-lambda).
 
-The New Relic Lambda Tracer is an OpenTracing [Tracer](https://opentracing.io/docs/overview/tracers/) implementation specifically designed to support AWS Lambda.
+It generates the following data in AWS Cloudwatch logs which, is then scraped by a [log ingestion Lambda function](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda#stream-logs) and sent to New Relic's telemetry data platform:
 
-It captures and generates the following data:
+- Span events
+- Transaction events
+- Error events
+- Traced errors
 
-- Span Events
-- Transaction Events
-- Error Events
-- Traced Errors
+Currently, the New Relic Lambda Tracer does not generate data types such as metrics or transaction traces.
 
-It does not capture other New Relic data types like metrics or transaction traces.
+## Installation
 
-### Supported OpenTracing Versions
+You can find artifacts for the [New Relic OpenTracing AWS Lambda Tracer](https://search.maven.org/search?q=a:newrelic-java-lambda) and [AWS Lambda OpenTracing Java SDK](https://search.maven.org/search?q=a:java-aws-lambda) on Maven Central.
 
-* OpenTracing 0.31.0: [com.newrelic.opentracing:newrelic-java-lambda:1.1.1](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/1.1.1/jar)
-* OpenTracing 0.33.0: [com.newrelic.opentracing:newrelic-java-lambda:2.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/2.0.0/jar)
-
-## How to Use
-
-See New Relic documentation: https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda#java
-
-1. [Add the `newrelic-java-lambda` dependency to your Gradle project.](#add-artifacts-to-gradle-project)
-2. Add the [AWS Lambda OpenTracing Java SDK](https://github.com/newrelic/java-aws-lambda) as a dependency to your project and [implement the tracing request handler](https://github.com/newrelic/java-aws-lambda#how-to-use). *Note:* In order for the `LambdaTracer` to function fully it must be used in conjunction with the `TracingRequestHandler` interface provided by the AWS Lambda OpenTracing Java SDK. If a different request handler is used the `LambdaTracer` will not be able to generate Error Events or Traced Errors.
-3. Register a `LambdaTracer.INSTANCE` as the OpenTracing Global tracer as shown in the [example](#example-usage).
-4. See Amazon's documentation on [creating a ZIP deployment package for a Java Lambda function](https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html)
-5. When creating your Lambda function in AWS Lambda console the handler for the given example would be entered as `com.handler.example.MyLambdaHandler::handleRequest` or just `com.handler.example.MyLambdaHandler`, the latter of which will use `handleRequest` as the handler method by default. *Note:* `handleRequest` is used as the handler entry point as it will call `doHandleRequest`.
-
-## Build the Project
-
-Run jar task: `./gradlew jar`
-
-Artifact: `newrelic-lambda-tracer-java/build/libs/newrelic-java-lambda.jar`
-
-## Add Artifacts to Gradle Project
-
-Include the [New Relic OpenTracing AWS Lambda Tracer](https://search.maven.org/search?q=a:newrelic-java-lambda) and [AWS Lambda OpenTracing Java SDK](https://search.maven.org/search?q=a:java-aws-lambda) artifacts by adding them as dependencies in your `build.gradle` file:
+The example below shows how to add them as dependencies in your `build.gradle` file:
 
 ```groovy
 dependencies {
-    compile "com.newrelic.opentracing:newrelic-java-lambda:2.0.0"
-    compile "com.newrelic.opentracing:java-aws-lambda:2.0.0"
+    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.0.0")
+    implementation("com.newrelic.opentracing:java-aws-lambda:2.0.0")
 }
 ```
 
-## Enable New Relic Distributed Tracing
-By default, traced Lambda functions won't be included in New Relic distributed traces. In order to enable distributed tracing for AWS Lambda the following environment variables must be configured in the AWS Lambda console for each function:
+## Supported OpenTracing versions
 
- | Environment Variable               | Description          | Default | Required |
- | :--------------------------------- | :------------------- | :-------- | :------- |
- | `NEW_RELIC_ACCOUNT_ID`             | New Relic account ID | `null` | Yes |
- | `NEW_RELIC_TRUSTED_ACCOUNT_KEY`    | If your New Relic account is a sub-account, this needs to be the account ID for the root/parent account. | `NEW_RELIC_ACCOUNT_ID` | For cross-account DT |
- | `NEW_RELIC_PRIMARY_APPLICATION_ID` | New Relic application ID | `Unknown` | No |
+The New Relic Lambda Tracer and SDK support different versions of OpenTracing as detailed below: 
 
-## Example Usage
+* OpenTracing `0.31.0`: 
+  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:1.1.1](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/1.1.1/jar)
+  * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:1.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda/1.0.0/jar) 
+* OpenTracing `0.32.0`, `0.33.0`:
+  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/2.0.0/jar)
+  * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:2.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda/2.0.0/jar) 
+
+## Getting Started
+
+For full details on getting started please see the documentation on how to [Enable monitoring AWS Lambda with New Relic Serverless](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda).
+
+## Usage
 
 ```java
 package com.handler.example;
@@ -93,25 +80,36 @@ public class MyLambdaHandler implements TracingRequestHandler<Map<String, Object
 }
 ```
 
-## Reporting Errors
+## Conventions for recording errors
 
-The LambdaTracer follows OpenTracing [semantic conventions](https://github.com/opentracing/specification/blob/master/semantic_conventions.md#log-fields-table) when recording error events and traces to [Span Logs](https://opentracing.io/docs/overview/tags-logs-baggage/#logs). The minimum required attributes are `error.object` and `message`.
+The New Relic Lambda Tracer follows OpenTracing [semantic conventions](https://github.com/opentracing/specification/blob/master/semantic_conventions.md#log-fields-table) when recording error events and traces. The minimum required attributes for errors are `error.object` and `message`.
 
 | Log key        | Log type                |                        Note                      | Required |
 | :------------: | :---------------------: | :----------------------------------------------: | :------: |
 | `error.object` | `Throwable`             | The `Throwable` object                           |   Yes    |
 | `message`      | `Throwable` message     | The detail message string of the throwable       |   Yes    |
 | `event`        | `String` `"error"`      | Indicates that an error event has occurred       | Optional |
-| `stack`        | `Throwable` stacktrace  | The the stack trace information of the throwable | Optional |
+| `stack`        | `Throwable` stacktrace  | The stack trace information of the throwable | Optional |
 | `error.kind`   | `String` `"Exception"`  | Indicates that the error was an `Exception`      | Optional |
 
-## Sending Lambda Data to New Relic
+## Building
 
-The New Relic OpenTracing AWS Lambda Tracer logs the data it generates in JSON format to the [AWS Cloudwatch logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) associated with the Lambda function that is being traced. The Cloudwatch logs are monitored by a separate [New Relic log ingestion Lambda function](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda) that must be deployed and configured with a New Relic license key. When a Cloudwatch Event occurs the log ingestion Lambda will parse the relevant logs for the New Relic specific JSON payload and report the payload to New Relic.
+Run jar task: `./gradlew jar`
 
-## New Relic AWS Lambda JSON Payload
+Artifact: `newrelic-lambda-tracer-java/build/libs/newrelic-java-lambda.jar`
 
-By default, everything but the metadata section in the JSON payload created by the New Relic Lambda Tracer is compressed, as seen in the following example:
+## Testing
+
+* Unit tests: `newrelic-lambda-tracer-java/src/test`
+* JMH benchmarks: `newrelic-lambda-tracer-java/src/jmh`
+  * Run JMH benchmarks: `./gradlew jmh`  
+  * Find results in `build/reports/jmh`
+
+When submitting a pull request, please ensure that tests are included for any new functionality and that all test suites are passing.
+
+## Example JSON logged to AWS Cloudwatch
+
+The New Relic Lambda Tracer logs a JSON payload to AWS Cloudwatch logs upon completion of the Lambda function. By default, everything but the metadata section in the JSON payload is compressed, as seen in the following example:
 
 ```json
 [
@@ -129,11 +127,9 @@ By default, everything but the metadata section in the JSON payload created by t
 ]
 ```
 
-## ‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍Debug Logging
+Additionally, you can use debug logging to log the uncompressed payloads, as seen in the below example.
 
-To enable debug logging add the `NEW_RELIC_DEBUG` key to the Lambda environment variable section with the value of `true`. Debug logging entries will be prefixed with `nr_debug` and will show full uncompressed payloads for Span events, Transaction events, and Error events as seen in the example.
-
-##### Example Debug Log Entry
+To enable debug logging set the `NEW_RELIC_DEBUG` environment variable to `true` in the AWS Lambda console for a given function. 
 
 ```json
 [
@@ -252,6 +248,17 @@ To enable debug logging add the `NEW_RELIC_DEBUG` key to the Lambda environment 
 ]
 ``` 
 
-## JMH Benchmarks
-Run: `./gradlew jmh`  
-Results can be found in `build/reports/jmh`
+## Support
+
+New Relic hosts and moderates an online forum where customers can interact with New Relic employees as well as other customers to get help and share best practices. Like all official New Relic open source projects, there's a related Community topic in the New Relic Explorers Hub. You can find this project's topic/threads here:
+
+https://discuss.newrelic.com/c/support-products-agents/java-agent
+
+## Contributing
+We encourage your contributions to improve `newrelic-lambda-tracer-java`! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project.
+If you have any questions, or to execute our corporate CLA, required if your contribution is on behalf of a company,  please drop us an email at opensource@newrelic.com.
+
+## License
+`newrelic-lambda-tracer-java` is licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) License.
+
+`newrelic-lambda-tracer-java` also uses source code from third-party libraries. You can find full details on which libraries are used and the terms under which they are licensed in the third-party notices document.
