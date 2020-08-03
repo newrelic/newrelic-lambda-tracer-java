@@ -42,6 +42,8 @@ When opening the project in Intellij for the first time you will likely need to 
 
 To run the `DTCallerFunction` and `DTCalleeFunction` locally using the AWS Toolkit Intellij plugin, the run configurations for each function should be configured with the proper environment variables/values and use the provided `events/request-input.json` test event as follows:  
 
+**Note**: See the section on [configuring an API Gateway proxy to invoke Lambda functions](configure-api-gateway-proxy-to-invoke-lambda-functions) for details on how to generate the url assigned to the `API_GATEWAY_PROXY_URL` environment variable. If you incorrectly configure `API_GATEWAY_PROXY_URL` in the run configuration for `DTCallerFunction` it will return a `400` response code when attempting to make an external call to `DTCalleeFunction`. When `API_GATEWAY_PROXY_URL` is configured properly a `200` response code should be returned.  
+
 DTCallerFunction Run Config     
 ![dt-caller-function-run-config](readme-resources/dt-caller-function-run-config.png?raw=true "DTCallerFunction Run Config")  
 
