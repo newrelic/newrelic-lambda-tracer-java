@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    // New Relic AWS Lambda OpenTracing instrumentation
+    compile('com.newrelic.opentracing:java-aws-lambda:2.0.0')
+    compile('com.newrelic.opentracing:newrelic-java-lambda:2.0.0')
+
+    // OpenTracing
+    compile('io.opentracing:opentracing-util:0.33.0')
+
+    // JSON processing
+    compile('com.googlecode.json-simple:json-simple:1.1')
+
+    // AWS Lambda Java SDK
+    compile('com.amazonaws:aws-lambda-java-log4j:1.0.0')
+    compile('com.amazonaws:aws-lambda-java-events:2.2.2')
+    compile('com.amazonaws:aws-java-sdk-lambda:1.11.608')
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
+
+    // HTTP client
+    compile('com.konghq:unirest-java:3.0.00')
+
+    testImplementation 'junit:junit:4.12'
+}
+
