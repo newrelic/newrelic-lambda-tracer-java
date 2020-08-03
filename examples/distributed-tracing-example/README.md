@@ -42,6 +42,8 @@ When opening the project in Intellij for the first time you will likely need to 
 
 To run the `DTCallerFunction` and `DTCalleeFunction` locally using the AWS Toolkit Intellij plugin, the run configurations for each function should be configured with the proper environment variables/values and use the provided `events/request-input.json` test event as follows:  
 
+**Note**: The `API_GATEWAY_PROXY_URL` environment variable as detailed in the [configure API Gateway proxy to invoke Lambda functions](configure-api-gateway-proxy-to-invoke-lambda-functions) section. This environment variable is not required for the `DTCallerFunction` to run but without it the external call to `DTCalleeFunction` will fail.  
+
 DTCallerFunction Run Config     
 ![dt-caller-function-run-config](readme-resources/dt-caller-function-run-config.png?raw=true "DTCallerFunction Run Config")  
 
