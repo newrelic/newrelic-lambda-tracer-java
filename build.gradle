@@ -19,7 +19,11 @@ repositories {
 // -Prelease=true will render a non-snapshot version
 // All other values (including unset) will render a snapshot version.
 def release = findProperty("release")
-version = "2.1.0" + (release ? "" : "-SNAPSHOT")
+version = project.findProperty("version")
+
+if (!release) {
+    version += "-SNAPSHOT"
+}
 group = "com.newrelic.opentracing"
 
 dependencies {
