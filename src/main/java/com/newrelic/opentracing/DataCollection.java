@@ -8,11 +8,14 @@ package com.newrelic.opentracing;
 import com.newrelic.opentracing.events.ErrorEvent;
 import com.newrelic.opentracing.events.TransactionEvent;
 import com.newrelic.opentracing.logging.Log;
+import com.newrelic.opentracing.pipe.NrTelemetryPipe;
 import com.newrelic.opentracing.traces.ErrorTrace;
 import com.newrelic.opentracing.util.ProtocolUtil;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,9 +24,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 class DataCollection {
 
+    private static final File NAMED_PIPE_PATH_FILE = new File("/tmp/newrelic-telemetry");
+
     private final AtomicReference<LinkedList<LambdaSpan>> spanReservoir = new AtomicReference<>(new LinkedList<>());
     private final Errors errors = new Errors();
     private final String executionEnv = System.getenv("AWS_EXECUTION_ENV");
+    private final NrTelemetryPipe nrTelemetryPipe = new NrTelemetryPipe(NAMED_PIPE_PATH_FILE);
 
     /**
      * Push finished spans into the reservoir. When the root span finishes, log them only if they're sampled.
@@ -64,6 +70,15 @@ class DataCollection {
         final Map<String, Object> data = ProtocolUtil.getData(spans, txnEvent, errorEvents, errorTraces);
 
         final List<Object> payload = Arrays.asList(2, "NR_LAMBDA_MONITORING", metadata, ProtocolUtil.compressAndEncode(JSONObject.toJSONString(data)));
+
+        if (nrTelemetryPipe.namedPipeExists()) {
+            try {
+                nrTelemetryPipe.writeToPipe(JSONArray.toJSONString(payload));
+                return;
+            } catch (IOException e){
+            }
+        }
+
         Log.getInstance().out(JSONArray.toJSONString(payload));
 
         final List<Object> debugPayload = Arrays.asList(2, "DEBUG", metadata, data);
