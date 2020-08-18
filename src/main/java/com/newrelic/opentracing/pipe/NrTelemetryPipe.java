@@ -17,7 +17,7 @@ public class NrTelemetryPipe {
     }
 
     public void writeToPipe(String payload) throws IOException {
-        try (BufferedWriter pipe = new BufferedWriter(new FileWriter(namedPipePath, false))){
+        try (BufferedWriter pipe = new BufferedWriter(new FileWriter(namedPipePath, false))) {
             pipe.write(payload);
         }
     }

@@ -75,7 +75,7 @@ class DataCollection {
             try {
                 nrTelemetryPipe.writeToPipe(JSONArray.toJSONString(payload));
                 return;
-            } catch (IOException e){
+            } catch (IOException e) {
             }
         }
 

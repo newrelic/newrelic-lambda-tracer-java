@@ -1,9 +1,8 @@
 package com.newrelic.opentracing;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.newrelic.opentracing.pipe.NrTelemetryPipe;
-
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,18 +31,18 @@ public class PipeTest {
         String payload = "I am a lambda payload";
         try {
             nrTelemetryPipe.writeToPipe(payload);
-        } catch (IOException e){
+        } catch (IOException e) {
         }
 
         BufferedReader br = new BufferedReader(new FileReader(testPayloadPipe));
-        assertEquals(true, nrTelemetryPipe.namedPipeExists());
-        assertEquals(true, br.readLine().equals(payload));
+        assertTrue(nrTelemetryPipe.namedPipeExists());
+        assertTrue(br.readLine().equals(payload));
     }
 
     @AfterEach
     void deletePipe() {
         File[] listFiles = testPayloadPipe.getParentFile().listFiles();
-        for(File file : listFiles){
+        for (File file : listFiles) {
             file.delete();
         }
         testPayloadPipe.getParentFile().delete();
