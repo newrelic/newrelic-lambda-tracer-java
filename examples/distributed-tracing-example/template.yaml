@@ -11,6 +11,7 @@ Globals:
     Timeout: 20
 
 Resources:
+  # Since the DTCallerFunction's definition depends on the ApiGatewayApiCallee, it needs to be separate from the ApiGatewayApiCaller, to avoid circular dependencies
   ApiGatewayApiCallee:
     Type: AWS::Serverless::Api
     Properties:
@@ -26,6 +27,7 @@ Resources:
       Handler: com.example.DTCalleeFunction::handleRequest
       Runtime: java8
       MemorySize: 512
+      # SAM templates make it easy to bind a Lambda function to an API Gateway resource. Managing them together in a single template helps maintain consistency across the application.
       Events:
         CalleeApi:
           Type: Api
@@ -35,7 +37,7 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApiCallee
   DTCallerFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: DTCallerFunction
       Handler: com.example.DTCallerFunction::handleRequest
@@ -43,6 +45,7 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
+          # This environment variable's value depends on the generated identifier for the ApiGatewayApiCallee resource. Tying together these dependencies is one of the strengths of SAM templates.
           API_GATEWAY_PROXY_URL: !Sub https://${ApiGatewayApiCallee}.execute-api.${AWS::Region}.amazonaws.com/testing/dt-callee
       Events:
         CallerApi:
@@ -52,6 +55,7 @@ Resources:
             Method: get
             RestApiId:
               Ref: ApiGatewayApiCaller
+# Outputs print their value when the template is deployed. More importantly, the value can be imported and used in other templates.
 Outputs:
   CallerEndpoint:
     Description: "New Relic DT example testing stage caller endpoint"
