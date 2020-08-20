@@ -5,6 +5,8 @@
 
 package com.example;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -45,19 +47,15 @@ public class DTCalleeFunctionTest {
          *   priority=1.112115
          * }
          */
-        Map<String, String> newrelicHeader = new HashMap<String, String>() {{
-            put(NR_DT_HEADER_KEY, NR_DT_HEADER_PAYLOAD);
-        }};
+        Map<String, String> newrelicHeader = Collections.singletonMap(NR_DT_HEADER_KEY, NR_DT_HEADER_PAYLOAD);
 
-        Map<String, Object> headers = new HashMap<String, Object>() {{
-            put("headers", newrelicHeader);
-        }};
+        APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent().withHeaders(newrelicHeader);
 
         DTCalleeFunction calleeFunction = new DTCalleeFunction();
-        final Map<String, Object> responseMap = calleeFunction.handleRequest(headers, new TestContext());
+        final APIGatewayProxyResponseEvent response = calleeFunction.handleRequest(requestEvent, new TestContext());
 
-        assertEquals(200, responseMap.get("statusCode"));
-        assertEquals("OK", responseMap.get("body"));
+        assertEquals(200, response.getStatusCode().intValue());
+        assertEquals("OK", response.getBody());
     }
 
     private static void setEnvironmentVariables(Map<String, String> environmentVariables) {

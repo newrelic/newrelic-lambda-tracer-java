@@ -8,6 +8,7 @@ package com.example;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,16 +51,13 @@ public class DTCallerFunctionTest {
              *   priority=1.112115
              * }
              */
-            Map<String, String> newrelicHeader = new HashMap<String, String>() {{
-                put(NR_DT_HEADER_KEY, NR_DT_HEADER_PAYLOAD);
-            }};
+            Map<String, String> newrelicHeader = Collections.singletonMap(NR_DT_HEADER_KEY, NR_DT_HEADER_PAYLOAD);
 
-            Map<String, Object> headers = new HashMap<String, Object>() {{
-                put("headers", newrelicHeader);
-            }};
+            APIGatewayProxyRequestEvent input = new APIGatewayProxyRequestEvent()
+                    .withHeaders(newrelicHeader);
 
             DTCallerFunction callerFunction = new DTCallerFunction();
-            final APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent = callerFunction.handleRequest(headers, new TestContext());
+            final APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent = callerFunction.handleRequest(input, new TestContext());
 
             assertEquals(Integer.valueOf(200), apiGatewayProxyResponseEvent.getStatusCode());
             assertEquals("OK", apiGatewayProxyResponseEvent.getBody());

@@ -6,9 +6,11 @@
 package com.example;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.newrelic.opentracing.LambdaTracer;
-import com.newrelic.opentracing.aws.TracingRequestHandler;
+import com.newrelic.opentracing.aws.LambdaTracing;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -30,7 +32,7 @@ import java.util.Map;
  * <p>
  * This function makes an external call to an API Gateway Proxy to invoke another AWS lambda function.
  */
-public class DTCallerFunction implements TracingRequestHandler<Map<String, Object>, APIGatewayProxyResponseEvent> {
+public class DTCallerFunction implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     static {
         GlobalTracer.registerIfAbsent(LambdaTracer.INSTANCE);
     }
@@ -43,36 +45,38 @@ public class DTCallerFunction implements TracingRequestHandler<Map<String, Objec
      * Invokes another AWS Lambda function through a call to API Gateway Proxy, logs the tracer results to the Lambda
      * Cloudwatch logs, and returns an APIGatewayProxyResponseEvent.
      *
-     * @param input   Input received from API Gateway Proxy
-     * @param context Lambda execution environment context object
+     * @param event   Input received from API Gateway Proxy
+     * @param ctx Lambda execution environment context object
      * @return APIGatewayProxyResponseEvent Response received from API Gateway Proxy
      */
     @Override
-    public APIGatewayProxyResponseEvent doHandleRequest(Map<String, Object> input, Context context) {
-        final HttpResponse<String> response;
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context ctx) {
+        return LambdaTracing.instrument(event, ctx, (input, context) -> {
+            final HttpResponse<String> response;
 
-        // Log Lambda function input details received from API Gateway to the Cloudwatch logs
-        if (input != null && !input.isEmpty()) {
-            LOG.info("Lambda function input: " + input);
-            LOG.info("Headers: " + input.get("headers"));
-        } else {
-            LOG.info("Lambda function did not receive any input");
-        }
+            // Log Lambda function input details received from API Gateway to the Cloudwatch logs
+            if (input != null) {
+                LOG.info("Lambda function input: " + input);
+                LOG.info("Headers: " + input.getHeaders());
+            } else {
+                LOG.info("Lambda function did not receive any input");
+            }
 
-        final String dtCalleeApiGatewayProxyURL = System.getenv(API_GATEWAY_PROXY_URL);
+            final String dtCalleeApiGatewayProxyURL = System.getenv(API_GATEWAY_PROXY_URL);
 
-        if (dtCalleeApiGatewayProxyURL == null) {
-            LOG.error("The API_GATEWAY_PROXY_URL environment variable must be set to properly invoke DTCalleeLambda");
+            if (dtCalleeApiGatewayProxyURL == null) {
+                LOG.error("The API_GATEWAY_PROXY_URL environment variable must be set to properly invoke DTCalleeLambda");
+                return new APIGatewayProxyResponseEvent()
+                        .withBody("Bad Request: The API_GATEWAY_PROXY_URL environment variable must be set to properly invoke DTCalleeLambda")
+                        .withStatusCode(400);
+            }
+            response = makeExternalCallToApiGateway(dtCalleeApiGatewayProxyURL);
+
             return new APIGatewayProxyResponseEvent()
-                    .withBody("Bad Request: The API_GATEWAY_PROXY_URL environment variable must be set to properly invoke DTCalleeLambda")
-                    .withStatusCode(400);
-        }
-        response = makeExternalCallToApiGateway(dtCalleeApiGatewayProxyURL);
-
-        return new APIGatewayProxyResponseEvent()
-                .withBody(response.getBody())
-                .withStatusCode(response.getStatus())
-                .withHeaders(getResponseHeaderMap(response));
+                    .withBody(response.getBody())
+                    .withStatusCode(response.getStatus())
+                    .withHeaders(getResponseHeaderMap(response));
+        });
     }
 
     /**
@@ -130,7 +134,7 @@ public class DTCallerFunction implements TracingRequestHandler<Map<String, Objec
      * @param response HttpResponse
      * @return Map of headers
      */
-    private Map<String, String> getResponseHeaderMap(HttpResponse response) {
+    private Map<String, String> getResponseHeaderMap(HttpResponse<?> response) {
         final List<Header> headerList = response.getHeaders().all();
         final Map<String, String> headerMap = new HashMap<>();
         headerList.forEach((header) -> headerMap.put(header.getName(), header.getValue()));
