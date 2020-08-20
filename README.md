@@ -21,8 +21,8 @@ The example below shows how to add them as dependencies in your `build.gradle` f
 
 ```groovy
 dependencies {
-    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.0.0")
-    implementation("com.newrelic.opentracing:java-aws-lambda:2.0.0")
+    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.1.1")
+    implementation("com.newrelic.opentracing:java-aws-lambda:2.1.0")
 }
 ```
 
@@ -34,8 +34,8 @@ The New Relic Lambda Tracer and SDK support different versions of OpenTracing as
   * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:1.1.1](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/1.1.1/jar)
   * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:1.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda/1.0.0/jar) 
 * OpenTracing `0.32.0`, `0.33.0`:
-  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/2.0.0/jar)
-  * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:2.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda/2.0.0/jar) 
+  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.1.1](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda/2.0.0/jar)
+  * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:2.1.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda/2.0.0/jar) 
 
 ## Getting Started
 
@@ -47,8 +47,10 @@ For full details on getting started please see the documentation on how to [Enab
 package com.handler.example;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
 import io.opentracing.util.GlobalTracer;
 import com.newrelic.opentracing.aws.TracingRequestHandler;
+import com.newrelic.opentracing.aws.LambdaTracing;
 import com.newrelic.opentracing.LambdaTracer;
 
 import java.util.Map;
@@ -59,7 +61,7 @@ import java.util.Map;
  * @param Map<String, Object> The Lambda Function input
  * @param String The Lambda Function output
  */
-public class MyLambdaHandler implements TracingRequestHandler<Map<String, Object>, String> {
+public class MyLambdaHandler implements RequestHandler<Map<String, Object>, String> {
     static {
         // Register the New Relic OpenTracing LambdaTracer as the Global Tracer
         GlobalTracer.registerIfAbsent(LambdaTracer.INSTANCE);
@@ -74,8 +76,10 @@ public class MyLambdaHandler implements TracingRequestHandler<Map<String, Object
      */
     @Override
     public String doHandleRequest(Map<String, Object> input, Context context) {
-        // TODO Your function logic here
-        return "Lambda Function output";
+        return LambdaTracing.instrument(apiGatewayProxyRequestEvent, context, (event, ctx) -> {
+            // TODO Your function logic here
+            return "Lambda Function output";
+        });
     }
 }
 ```
