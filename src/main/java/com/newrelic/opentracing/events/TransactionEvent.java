@@ -59,7 +59,7 @@ public class TransactionEvent extends Event {
             }
         }
 
-        for(Map.Entry<String, Object> tag : span.getTags().entrySet()) {
+        for (Map.Entry<String, Object> tag : span.getTags().entrySet()) {
             if (AGENT_ATTRIBUTE_KEYS.contains(tag.getKey())) {
                 agentAttributes.put(tag.getKey(), tag.getValue());
             } else {
