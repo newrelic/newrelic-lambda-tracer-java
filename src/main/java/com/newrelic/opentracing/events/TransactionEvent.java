@@ -12,13 +12,25 @@ import com.newrelic.opentracing.dt.DistributedTracing;
 import com.newrelic.opentracing.state.DistributedTracingState;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class TransactionEvent extends Event {
 
     private final Map<String, Object> intrinsics = new HashMap<>();
     private final Map<String, Object> userAttributes = new HashMap<>();
     private final Map<String, Object> agentAttributes = new HashMap<>();
+
+    private static final Set<String> AGENT_ATTRIBUTE_KEYS;
+    static {
+        AGENT_ATTRIBUTE_KEYS = new HashSet<>();
+        AGENT_ATTRIBUTE_KEYS.add("aws.lambda.arn");
+        AGENT_ATTRIBUTE_KEYS.add("aws.lambda.coldStart");
+        AGENT_ATTRIBUTE_KEYS.add("aws.lambda.eventSource.arn");
+        AGENT_ATTRIBUTE_KEYS.add("aws.lambda.eventSource.eventType");
+        AGENT_ATTRIBUTE_KEYS.add("aws.requestId");
+    }
 
     public TransactionEvent(LambdaSpan span) {
         intrinsics.put("type", "Transaction");
@@ -43,13 +55,19 @@ public class TransactionEvent extends Event {
             }
 
             if (context.getTransactionState().hasError()) {
-                intrinsics.put("error", true);
+                agentAttributes.put("error", true);
             }
         }
 
-        userAttributes.putAll(span.getTags());
-        userAttributes.remove("http.status_code");
+        for (Map.Entry<String, Object> tag : span.getTags().entrySet()) {
+            if (AGENT_ATTRIBUTE_KEYS.contains(tag.getKey())) {
+                agentAttributes.put(tag.getKey(), tag.getValue());
+            } else {
+                userAttributes.put(tag.getKey(), tag.getValue());
+            }
+        }
 
+        userAttributes.remove("http.status_code");
         String status = parseStatusCode(span.getTag("http.status_code"));
         if (status != null && !status.isEmpty()) {
             agentAttributes.put("response.status", status);
