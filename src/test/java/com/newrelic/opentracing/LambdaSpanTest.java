@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.newrelic.opentracing.logging.InMemoryLogger;
 import com.newrelic.opentracing.logging.Log;
+import com.newrelic.opentracing.state.PrioritySamplingState;
 import com.newrelic.opentracing.util.TimeUtil;
 import io.opentracing.tag.*;
 import org.json.simple.JSONArray;
@@ -49,8 +50,8 @@ class LambdaSpanTest {
   void durationTest() {
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid",
-            "txnId");
+        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid"
+        );
     sleep(80);
     span.finish();
 
@@ -69,8 +70,8 @@ class LambdaSpanTest {
   void noErrorTag() {
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid",
-            "txnId");
+        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid"
+        );
     sleep(80);
     span.setTag("error", true);
     span.finish();
@@ -82,8 +83,8 @@ class LambdaSpanTest {
     final long start = System.currentTimeMillis();
 
     final LambdaSpan span = SpanTestUtils
-        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid",
-            "txnId");
+        .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid"
+        );
     sleep(80);
     span.setTag("http.status_code", "404");
     span.setTag("span.kind", "client");
@@ -96,18 +97,18 @@ class LambdaSpanTest {
   @Test
   void spanParenting() {
     final LambdaSpan parent = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-        System.nanoTime(), new HashMap<>(), null, "parentGuid", "txnId");
+        System.nanoTime(), new HashMap<>(), null, "parentGuid");
 
     final LambdaSpan child = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-        System.nanoTime(), new HashMap<>(), parent, "childGuid", "txnId");
+        System.nanoTime(), new HashMap<>(), parent, "childGuid");
 
     final LambdaSpan grandChild = SpanTestUtils
         .createSpan("operationName", System.currentTimeMillis(),
-            System.nanoTime(), new HashMap<>(), child, "grandChildGuid", "txnId");
+            System.nanoTime(), new HashMap<>(), child, "grandChildGuid");
 
     final LambdaSpan greatGrandChild = SpanTestUtils
         .createSpan("operationName", System.currentTimeMillis(),
-            System.nanoTime(), new HashMap<>(), grandChild, "greatGrandChild", "txnId");
+            System.nanoTime(), new HashMap<>(), grandChild, "greatGrandChild");
 
     assertNull(parent.getIntrinsics().get("parentId"));
     assertEquals("parentGuid", child.getIntrinsics().get("parentId"));
@@ -122,9 +123,9 @@ class LambdaSpanTest {
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
         .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid",
-            "txnId");
+                new PrioritySamplingState(1.2f, true)
+        );
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
     span.finish();
 
     List<String> logs = Log.getInstance().getLogs();
@@ -141,9 +142,9 @@ class LambdaSpanTest {
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
         .createSpan("operationName", start, System.nanoTime(), new HashMap<>(), null, "guid",
-            "txnId");
+                new PrioritySamplingState(0.1f, false)
+        );
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(false);
     span.finish();
 
     List<String> logs = Log.getInstance().getLogs();
@@ -159,11 +160,10 @@ class LambdaSpanTest {
 
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-            .createSpan("operationName", start, System.nanoTime(), null, null, "guid",
-                    "txnId");
+            .createSpan("operationName", start, System.nanoTime(), null, null, "guid"
+            );
 
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
 
     // No tags added and null map doesn't cause NPE
     assertTrue(span.getTags().isEmpty());
@@ -188,11 +188,10 @@ class LambdaSpanTest {
 
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-            .createSpan("operationName", start, System.nanoTime(), input, null, "guid",
-                    "txnId");
+            .createSpan("operationName", start, System.nanoTime(), input, null, "guid"
+            );
 
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
 
     // Valid tags added
     assertEquals(expected, span.getTags());
@@ -220,11 +219,10 @@ class LambdaSpanTest {
 
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-            .createSpan("operationName", start, System.nanoTime(), input, null, "guid",
-                    "txnId");
+            .createSpan("operationName", start, System.nanoTime(), input, null, "guid"
+            );
 
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
 
     // Valid tags added, null keys/values omitted
     assertEquals(expected, span.getTags());
@@ -248,8 +246,8 @@ class LambdaSpanTest {
 
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-            .createSpan("operationName", start, System.nanoTime(), null, null, "guid",
-                    "txnId");
+            .createSpan("operationName", start, System.nanoTime(), null, null, "guid"
+            );
     span.setTag("key1", "value");
     span.setTag("key2", true);
     span.setTag("key3", 2.0f);
@@ -259,7 +257,6 @@ class LambdaSpanTest {
     span.setTag(new IntOrStringTag("key7"), 0);
 
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
 
     // Valid tags added
     assertEquals(expected, span.getTags());
@@ -274,14 +271,13 @@ class LambdaSpanTest {
 
     final long start = System.currentTimeMillis();
     final LambdaSpan span = SpanTestUtils
-            .createSpan("operationName", start, System.nanoTime(), null, null, "guid",
-                    "txnId");
+            .createSpan("operationName", start, System.nanoTime(), null, null, "guid"
+            );
     span.setTag(null, false);
     span.setTag((String) null, "value");
     span.setTag("key5", (Number) null);
 
     sleep(80);
-    span.getPrioritySamplingState().setSampledAndGeneratePriority(true);
 
     // No tags added and null keys/values don't cause NPE
     assertTrue(span.getTags().isEmpty());
@@ -304,8 +300,9 @@ class LambdaSpanTest {
   }
 
   private void sleep(int sleepInMs) {
-    final long end = System.currentTimeMillis() + sleepInMs;
-    while (System.currentTimeMillis() <= end) {
+    try {
+      Thread.sleep(sleepInMs);
+    } catch (InterruptedException ignored) {
     }
   }
 

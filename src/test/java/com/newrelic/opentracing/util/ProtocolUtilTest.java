@@ -10,8 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.newrelic.opentracing.LambdaSpan;
+import com.newrelic.opentracing.SpanTestUtils;
 import com.newrelic.opentracing.events.ErrorEvent;
 import com.newrelic.opentracing.events.TransactionEvent;
+import com.newrelic.opentracing.state.DistributedTracingState;
+import com.newrelic.opentracing.state.TransactionState;
 import com.newrelic.opentracing.traces.ErrorTrace;
 
 import java.util.ArrayList;
@@ -36,7 +39,9 @@ public class ProtocolUtilTest {
     @Test
     public void getData() {
         List<LambdaSpan> spans = createTestSpans(2);
-        TransactionEvent txnEvent = new TransactionEvent(spans.get(0));
+        TransactionState txnState = new TransactionState();
+        DistributedTracingState distributedTracingState = new DistributedTracingState();
+        TransactionEvent txnEvent = new TransactionEvent(spans.get(0), txnState, distributedTracingState);
         List<ErrorEvent> errorEvents = new ArrayList<>();
         List<ErrorTrace> trace = new ArrayList<>();
 
@@ -72,8 +77,8 @@ public class ProtocolUtilTest {
 
         LambdaSpan parentSpan = null;
         while (numberOfSpans-- > 0) {
-            final LambdaSpan lambdaSpan = new LambdaSpan("operationName", 1234L, 1234L,
-                    tags, parentSpan, "guid", "txnId");
+            final LambdaSpan lambdaSpan = SpanTestUtils.createSpan("operationName", 1234L, 1234L,
+                    tags, parentSpan, "guid");
             parentSpan = lambdaSpan;
             spans.add(lambdaSpan);
         }

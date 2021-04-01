@@ -10,15 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.newrelic.opentracing.LambdaSpan;
-import com.newrelic.opentracing.LambdaSpanContext;
-import com.newrelic.opentracing.SpanTestUtils;
+import com.newrelic.TestLambdaCollector;
+import com.newrelic.opentracing.*;
 import com.newrelic.opentracing.dt.DistributedTracing.Configuration;
 import com.newrelic.opentracing.events.TransactionEvent;
 import com.newrelic.opentracing.state.DistributedTracingState;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.newrelic.opentracing.state.TransactionState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,10 +42,9 @@ class DistributedTracingTest {
         assertEquals("primaryApp", DistributedTracing.getInstance().getApplicationId());
 
         final LambdaSpan span = SpanTestUtils.createSpan("operation", System.currentTimeMillis(), System.nanoTime(), new HashMap<>(),
-                null, "guid", "transactionId");
+                null, "guid");
 
         final LambdaSpanContext context = (LambdaSpanContext) span.context();
-        context.getDistributedTracingState().generateAndStoreTraceId();
 
         final DistributedTracing distributedTracing = DistributedTracing.getInstance();
         final DistributedTracePayloadImpl payload = distributedTracing.createDistributedTracePayload(span);
@@ -53,9 +54,8 @@ class DistributedTracingTest {
         assertEquals("trustKey", payload.getTrustKey());
         assertEquals("primaryApp", payload.getApplicationId());
         assertEquals(span.guid(), payload.getGuid());
-        assertEquals(span.traceId(), payload.getTraceId());
-        assertEquals(span.priority(), payload.getPriority(), 0.0f);
-        assertEquals(span.getTransactionId(), payload.getTransactionId());
+        assertEquals(((LambdaSpanContext) span.context()).getPriority(), payload.getPriority(), 0.0f);
+        assertEquals(((LambdaSpanContext) span.context()).getTransactionId(), payload.getTransactionId());
     }
 
     @Test
@@ -67,8 +67,8 @@ class DistributedTracingTest {
     @Test
     void testIntrinsics() {
         final DistributedTracePayloadImpl payload = DistributedTracePayloadImpl.createDistributedTracePayload("traceId", "guid", "txnId", 0.8f);
-        final DistributedTracingState dtState = new DistributedTracingState();
-        dtState.setInboundPayloadAndTransportTime(payload, 450);
+        LambdaPayloadContext lambdaPayloadContext = new LambdaPayloadContext(payload, 450, Collections.emptyMap());
+        final DistributedTracingState dtState = new DistributedTracingState(lambdaPayloadContext);
 
         final Map<String, Object> dtAtts = DistributedTracing.getInstance().getDistributedTracingAttributes(dtState, "someOtherGuid", 1.4f);
         assertEquals("App", dtAtts.get("parent.type"));
@@ -119,7 +119,7 @@ class DistributedTracingTest {
         tags.put("one", 1);
         tags.put("tagThree", "value");
 
-        final LambdaSpan currentSpan = SpanTestUtils.createSpanWithInboundPayload("fetch", System.currentTimeMillis(), System.nanoTime(), tags, "guidCurrent");
+        final LambdaSpan currentSpan = SpanTestUtils.createSpanWithInboundPayload("fetch", System.currentTimeMillis(), System.nanoTime(), tags, "guidCurrent", new LambdaCollector());
 
         final Map<String, Object> currentSpanIntrinsics = currentSpan.getIntrinsics();
 
@@ -135,7 +135,7 @@ class DistributedTracingTest {
 
         assertEquals(1.2345f, currentSpanIntrinsics.get("priority"));
         assertEquals(true, currentSpanIntrinsics.get("sampled"));
-        assertEquals("txnIdInbound", currentSpanIntrinsics.get("transactionId"));
+        assertNotNull(currentSpanIntrinsics.get("transactionId"));
         assertEquals("guidInbound", currentSpanIntrinsics.get("parentId"));
         assertEquals("Unknown", currentSpanIntrinsics.get("parent.transportType"));
         assertEquals(1.337f, currentSpanIntrinsics.get("parent.transportDuration"));
@@ -148,9 +148,11 @@ class DistributedTracingTest {
         tags.put("one", 1);
         tags.put("tagThree", "value");
 
-        final LambdaSpan currentSpan = SpanTestUtils.createSpanWithInboundPayload("fetch", System.currentTimeMillis(), System.nanoTime(), tags, "guidCurrent");
+        final TestLambdaCollector collector = new TestLambdaCollector();
+        final LambdaSpan currentSpan = SpanTestUtils.createSpanWithInboundPayload("fetch", System.currentTimeMillis(), System.nanoTime(), tags, "guidCurrent", collector);
+        currentSpan.finish();
 
-        final TransactionEvent transactionEvent = new TransactionEvent(currentSpan);
+        final TransactionEvent transactionEvent = collector.getTxnEvent();
         final Map<String, Object> txnEventIntrinsics = transactionEvent.getIntrinsics();
 
         assertNotNull(txnEventIntrinsics.get("traceId"));
@@ -166,7 +168,7 @@ class DistributedTracingTest {
         assertEquals(1.2345f, txnEventIntrinsics.get("priority"));
         assertEquals(true, txnEventIntrinsics.get("sampled"));
         assertEquals("guidInbound", txnEventIntrinsics.get("parentSpanId"));
-        assertEquals("txnIdInbound", txnEventIntrinsics.get("parentId"));
+        assertNotNull(txnEventIntrinsics.get("parentId"));
         assertEquals("Other/Function/Test", txnEventIntrinsics.get("name"));
         assertEquals("Unknown", txnEventIntrinsics.get("parent.transportType"));
         assertEquals(1.337f, txnEventIntrinsics.get("parent.transportDuration"));

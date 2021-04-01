@@ -7,34 +7,25 @@ package com.newrelic.opentracing.state;
 
 import com.newrelic.opentracing.util.DistributedTraceUtil;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class PrioritySamplingState {
+    private final float priority;
+    private final boolean sampled;
 
-    private AtomicReference<Float> priority = new AtomicReference<>(0.0f);
-    private AtomicBoolean sampled = new AtomicBoolean(false);
+    public static PrioritySamplingState setSampledAndGeneratePriority(boolean computeSampled) {
+        final float priority = DistributedTraceUtil.nextTruncatedFloat() + (computeSampled ? 1.0f : 0.0f);
+        return new PrioritySamplingState(priority, computeSampled);
+    }
 
-    public void setPriority(float newPriority) {
-        priority.set(newPriority);
+    public PrioritySamplingState(float priority, boolean sampled) {
+        this.priority = priority;
+        this.sampled = sampled;
     }
 
     public float getPriority() {
-        return priority.get();
-    }
-
-    public void setSampled(boolean sampled) {
-        this.sampled.set(sampled);
+        return priority;
     }
 
     public boolean isSampled() {
-        return sampled.get();
+        return sampled;
     }
-
-    public void setSampledAndGeneratePriority(boolean computeSampled) {
-        final float priority = DistributedTraceUtil.nextTruncatedFloat() + (computeSampled ? 1.0f : 0.0f);
-        setSampled(computeSampled);
-        setPriority(priority);
-    }
-
 }

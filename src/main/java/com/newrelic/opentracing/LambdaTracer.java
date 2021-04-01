@@ -15,6 +15,7 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
+import io.opentracing.util.ThreadLocalScopeManager;
 
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
@@ -29,7 +30,7 @@ public class LambdaTracer implements Tracer {
     private static final String NEWRELIC_TRACE_HEADER = "newrelic";
     public static final LambdaTracer INSTANCE = new LambdaTracer();
 
-    private final LambdaScopeManager scopeManager = new LambdaScopeManager();
+    private final ScopeManager scopeManager = new ThreadLocalScopeManager();
     private final AdaptiveSampling adaptiveSampling = new AdaptiveSampling();
 
     private LambdaTracer() {
@@ -62,8 +63,7 @@ public class LambdaTracer implements Tracer {
         }
 
         LambdaSpanContext lambdaSpanContext = (LambdaSpanContext) spanContext;
-        final LambdaSpan span = lambdaSpanContext.getSpan();
-        DistributedTracePayload distributedTracePayload = lambdaSpanContext.getDistributedTracingState().createDistributedTracingPayload(span);
+        DistributedTracePayload distributedTracePayload = lambdaSpanContext.createDistributedTracingPayload();
 
         if (distributedTracePayload == null) {
             return;

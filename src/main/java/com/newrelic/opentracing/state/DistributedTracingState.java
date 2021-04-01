@@ -5,66 +5,48 @@
 
 package com.newrelic.opentracing.state;
 
+import com.newrelic.opentracing.LambdaPayloadContext;
 import com.newrelic.opentracing.LambdaSpan;
 import com.newrelic.opentracing.dt.DistributedTracePayload;
 import com.newrelic.opentracing.dt.DistributedTracePayloadImpl;
 import com.newrelic.opentracing.dt.DistributedTracing;
 import com.newrelic.opentracing.util.DistributedTraceUtil;
 
+import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DistributedTracingState {
 
-    private AtomicReference<DistributedTracePayloadImpl> inboundPayload = new AtomicReference<>();
-    private AtomicLong transportTimeMillis = new AtomicLong(Long.MIN_VALUE);
-    private AtomicBoolean hasOutboundPayload = new AtomicBoolean(false);
-    private AtomicReference<DistributedTracePayloadImpl> firstOutboundPayload = new AtomicReference<>();
-    private AtomicReference<String> traceId = new AtomicReference<>(null);
-    private Map<String, String> baggage;
+    private final DistributedTracePayloadImpl inboundPayload;
+    private final long transportTimeMillis;
+    private final String traceId;
+    private volatile Map<String, String> baggage;
+
+    public DistributedTracingState(LambdaPayloadContext context) {
+        this.inboundPayload = context.getPayload();
+        this.transportTimeMillis = context.getTransportDurationInMillis();
+        this.setBaggage(context.getBaggage());
+        this.traceId = inboundPayload.getTraceId();
+    }
+
+    public DistributedTracingState() {
+        inboundPayload = null;
+        transportTimeMillis = Long.MIN_VALUE;
+        setBaggage(Collections.emptyMap());
+        traceId = DistributedTraceUtil.generateGuid();
+    }
 
     public DistributedTracePayloadImpl getInboundPayload() {
-        return inboundPayload.get();
-    }
-
-    public void setInboundPayloadAndTransportTime(DistributedTracePayloadImpl payload, long transportTimeInMillis) {
-        inboundPayload.compareAndSet(null, payload);
-        transportTimeMillis.compareAndSet(Long.MIN_VALUE, transportTimeInMillis);
-    }
-
-    private void setOutboundPayload(DistributedTracePayloadImpl outboundPayload) {
-        firstOutboundPayload.compareAndSet(null, outboundPayload);
-        hasOutboundPayload.compareAndSet(false, true);
-    }
-
-    public boolean outboundPayloadCreated() {
-        return hasOutboundPayload.get();
+        return inboundPayload;
     }
 
     public String getTraceId() {
-        final DistributedTracePayloadImpl payload = inboundPayload.get();
-        final DistributedTracePayloadImpl firstOutboundPayload = this.firstOutboundPayload.get();
-
-        if (payload != null) {
-            return payload.getTraceId();
-        } else if (firstOutboundPayload != null) {
-            return firstOutboundPayload.getTraceId();
-        }
-
-        // Generated when request starts
-        return traceId.get();
-    }
-
-    public void generateAndStoreTraceId() {
-        traceId.set(DistributedTraceUtil.generateGuid());
+        return traceId;
     }
 
     public DistributedTracePayload createDistributedTracingPayload(LambdaSpan span) {
-        final DistributedTracePayloadImpl outboundPayload = DistributedTracing.getInstance().createDistributedTracePayload(span);
-        setOutboundPayload(outboundPayload);
-        return outboundPayload;
+        return DistributedTracing.getInstance().createDistributedTracePayload(span);
     }
 
     public void setBaggage(Map<String, String> baggage) {
@@ -79,7 +61,7 @@ public class DistributedTracingState {
      * @return transport duration or Long.MIN_VALUE if not set
      */
     public long getTransportTimeMillis() {
-        return transportTimeMillis.get();
+        return transportTimeMillis;
     }
 
 }

@@ -19,21 +19,21 @@ public class LambdaPayloadContext implements SpanContext {
     private final long transportDurationInMillis;
     private final Map<String, String> baggage;
 
-    LambdaPayloadContext(DistributedTracePayloadImpl distributedTracePayload, long transportDurationInMillis, Map<String, String> baggage) {
+    public LambdaPayloadContext(DistributedTracePayloadImpl distributedTracePayload, long transportDurationInMillis, Map<String, String> baggage) {
         this.payload = distributedTracePayload;
         this.transportDurationInMillis = transportDurationInMillis;
         this.baggage = baggage;
     }
 
-    DistributedTracePayloadImpl getPayload() {
+    public DistributedTracePayloadImpl getPayload() {
         return payload;
     }
 
-    long getTransportDurationInMillis() {
+    public long getTransportDurationInMillis() {
         return transportDurationInMillis;
     }
 
-    Map<String, String> getBaggage() {
+    public Map<String, String> getBaggage() {
         return baggage;
     }
 
