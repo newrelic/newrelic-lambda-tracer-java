@@ -19,7 +19,7 @@ import org.json.simple.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 public class LambdaCollector {
@@ -28,7 +28,7 @@ public class LambdaCollector {
     private static final NrTelemetryPipe NR_TELEMETRY_PIPE = new NrTelemetryPipe(NAMED_PIPE_PATH_FILE);
     private static final String AWS_EXECUTION_ENV = System.getenv("AWS_EXECUTION_ENV");
 
-    private final Queue<LambdaSpanContext> reservoir = new ConcurrentLinkedQueue<>();
+    private final Queue<LambdaSpanContext> reservoir = new LinkedBlockingQueue<>();
 
     /**
      * Push finished spans into the reservoir. When the root span finishes, log them only if they're sampled.
@@ -56,7 +56,9 @@ public class LambdaCollector {
             if (!rootSpan.isSampled()) {
                 spans = Collections.emptyList();
             } else {
-                spans = contexts.stream().map(LambdaSpanContext::getSpan).collect(Collectors.toList());
+                spans = contexts.stream()
+                        .map(LambdaSpanContext::getSpan)
+                        .collect(Collectors.toList());
             }
 
             final TransactionEvent txnEvent = new TransactionEvent(rootSpan, txnState, dtState);
@@ -88,7 +90,8 @@ public class LambdaCollector {
             try {
                 NR_TELEMETRY_PIPE.writeToPipe(JSONArray.toJSONString(payload));
                 return;
-            } catch (IOException e) {
+            } catch (IOException ignored) {
+                //Errors will fall through, and result in the log write.
             }
         }
 

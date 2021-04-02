@@ -19,7 +19,9 @@ import java.util.Set;
 
 public class TransactionEvent extends Event {
 
-    private final Map<String, Object> intrinsics = new HashMap<>();
+    private static final int INTRINSIC_DEFAULT_CAPACITY = 32;
+
+    private final Map<String, Object> intrinsics = new HashMap<>(INTRINSIC_DEFAULT_CAPACITY);
     private final Map<String, Object> userAttributes = new HashMap<>();
     private final Map<String, Object> agentAttributes = new HashMap<>();
 

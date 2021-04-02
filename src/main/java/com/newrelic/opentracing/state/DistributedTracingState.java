@@ -14,26 +14,25 @@ import com.newrelic.opentracing.util.DistributedTraceUtil;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class DistributedTracingState {
 
     private final DistributedTracePayloadImpl inboundPayload;
     private final long transportTimeMillis;
     private final String traceId;
-    private volatile Map<String, String> baggage;
+    private final Map<String, String> baggage;
 
     public DistributedTracingState(LambdaPayloadContext context) {
         this.inboundPayload = context.getPayload();
         this.transportTimeMillis = context.getTransportDurationInMillis();
-        this.setBaggage(context.getBaggage());
+        this.baggage = context.getBaggage();
         this.traceId = inboundPayload.getTraceId();
     }
 
     public DistributedTracingState() {
         inboundPayload = null;
         transportTimeMillis = Long.MIN_VALUE;
-        setBaggage(Collections.emptyMap());
+        this.baggage = Collections.emptyMap();
         traceId = DistributedTraceUtil.generateGuid();
     }
 
@@ -47,10 +46,6 @@ public class DistributedTracingState {
 
     public DistributedTracePayload createDistributedTracingPayload(LambdaSpan span) {
         return DistributedTracing.getInstance().createDistributedTracePayload(span);
-    }
-
-    public void setBaggage(Map<String, String> baggage) {
-        this.baggage = baggage;
     }
 
     public Map<String, String> getBaggage() {
