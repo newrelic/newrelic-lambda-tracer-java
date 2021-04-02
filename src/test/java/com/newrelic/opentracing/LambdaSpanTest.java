@@ -62,7 +62,7 @@ class LambdaSpanTest {
     assertTrue(spanDurationInMs <= maxExpectedDurationInMs, "Incorrect span duration: " + spanDurationInMs);
 
     final float durationInSec = (float) span.getIntrinsics().get("duration");
-    assertTrue(durationInSec <= (maxExpectedDurationInMs / TimeUtil.MILLISECONDS_PER_SECOND),
+    assertTrue(durationInSec * TimeUtil.MILLISECONDS_PER_SECOND <= maxExpectedDurationInMs,
         "Incorrect span duration in sec: " + durationInSec);
   }
 

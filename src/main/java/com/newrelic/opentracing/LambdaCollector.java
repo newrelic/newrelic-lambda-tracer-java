@@ -32,6 +32,9 @@ public class LambdaCollector {
 
     /**
      * Push finished spans into the reservoir. When the root span finishes, log them only if they're sampled.
+     * @param context The span context for the finished span.
+     * @param dtState The trace's distributed tracing state.
+     * @param txnState The trace's transaction state.
      */
     public void spanFinished(LambdaSpanContext context, DistributedTracingState dtState, TransactionState txnState) {
         reservoir.add(context);
@@ -65,6 +68,11 @@ public class LambdaCollector {
 
     /**
      * Write all the payload data to the console using standard out. This is the only method that should call the Logger#out method.
+     * @param arn the function's ARN
+     * @param errorEvents errors captured
+     * @param errorTraces error traces captured
+     * @param spans spans captured
+     * @param txnEvent the transaction event synthesized from the root span
      */
     protected void writeData(String arn,
                            List<LambdaSpan> spans,
