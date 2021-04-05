@@ -5,7 +5,10 @@
 
 package com.newrelic.opentracing;
 
+import com.newrelic.opentracing.dt.DistributedTracePayloadImpl;
+import com.newrelic.opentracing.state.DistributedTracingState;
 import com.newrelic.opentracing.state.PrioritySamplingState;
+import com.newrelic.opentracing.state.TransactionState;
 import com.newrelic.opentracing.util.DistributedTraceUtil;
 import io.opentracing.References;
 import io.opentracing.Span;
@@ -96,48 +99,53 @@ public class LambdaSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Span start() {
-        final LambdaTracer tracer = LambdaTracer.INSTANCE;
-        final Span activeSpan = tracer.activeSpan();
-
         long timestamp = System.currentTimeMillis();
         long startTimeInNanos = this.startTimeInNanos == 0 ? System.nanoTime() : this.startTimeInNanos;
 
+        final LambdaTracer tracer = LambdaTracer.INSTANCE;
+        final Span activeSpan = tracer.activeSpan();
+
+        // Figure out the parent context situation
         SpanContext parentSpanContext = null;
         if (!ignoreActiveSpan && parent == null && activeSpan != null) {
+            // An explicit parent hasn't been set, and there's an active span we're not ignoring.
             addReference(References.CHILD_OF, activeSpan.context());
             parentSpanContext = activeSpan.context();
         } else if (parent != null) {
+            // We have an explicit parent context
             parentSpanContext = parent;
         }
 
-        LambdaScopeManager scopeManager = (LambdaScopeManager) tracer.scopeManager();
-
-        LambdaSpan parentSpan = null;
+        // Construct the new span, wiring in the parent context
+        LambdaSpan newSpan;
         if (parentSpanContext instanceof LambdaPayloadContext) {
+            // Our parent context is extracted from a cross-process trace context. New root span.
             final LambdaPayloadContext payloadContext = (LambdaPayloadContext) parentSpanContext;
-            scopeManager.dtState.get().setInboundPayloadAndTransportTime(payloadContext.getPayload(), payloadContext.getTransportDurationInMillis());
-            scopeManager.dtState.get().setBaggage(payloadContext.getBaggage());
-            scopeManager.priorityState.get().setSampled(scopeManager.dtState.get().getInboundPayload().isSampled());
-            scopeManager.priorityState.get().setPriority(scopeManager.dtState.get().getInboundPayload().getPriority());
+            final DistributedTracePayloadImpl dtPayload = payloadContext.getPayload();
+            final PrioritySamplingState prioritySamplingState = new PrioritySamplingState(
+                    dtPayload.getPriority(),
+                    dtPayload.isSampled()
+            );
+
+            final DistributedTracingState distributedTracingState = new DistributedTracingState(payloadContext);
+            TransactionState transactionState = new TransactionState();
+
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null, DistributedTraceUtil.generateGuid());
+            LambdaSpanContext spanContext = new LambdaSpanContext(newSpan, distributedTracingState, prioritySamplingState, transactionState, new LambdaCollector());
+            newSpan.setContext(spanContext);
         } else if (parentSpanContext instanceof LambdaSpanContext) {
-            parentSpan = ((LambdaSpanContext) parentSpanContext).getSpan();
-        }
-
-        LambdaSpan newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, parentSpan, DistributedTraceUtil.generateGuid(),
-                scopeManager.txnState.get().getTransactionId());
-        LambdaSpanContext spanContext = new LambdaSpanContext(newSpan, scopeManager);
-        newSpan.setContext(spanContext);
-
-        if (newSpan.isRootSpan()) {
-            final AdaptiveSampling adaptiveSampling = LambdaTracer.INSTANCE.adaptiveSampling();
+            // Our parent context is a normal, local span context
+            final LambdaSpanContext lambdaSpanContext = (LambdaSpanContext) parentSpanContext;
+            LambdaSpan parentSpan = lambdaSpanContext.getSpan();
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, parentSpan, DistributedTraceUtil.generateGuid());
+            newSpan.setContext(lambdaSpanContext.newContext(newSpan));
+        } else {
+            // We have no parent context. New root span, new trace.
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null, DistributedTraceUtil.generateGuid());
+            final AdaptiveSampling adaptiveSampling = tracer.adaptiveSampling();
             adaptiveSampling.requestStarted();
-
-            // First span without inbound DT makes sampling decision generates traceId
-            if (scopeManager.dtState.get() != null) {
-                final PrioritySamplingState pss = spanContext.getPrioritySamplingState();
-                pss.setSampledAndGeneratePriority(adaptiveSampling.computeSampled());
-                spanContext.getDistributedTracingState().generateAndStoreTraceId();
-            }
+            final PrioritySamplingState pss = PrioritySamplingState.setSampledAndGeneratePriority(adaptiveSampling.computeSampled());
+            newSpan.setContext(new LambdaSpanContext(newSpan, new DistributedTracingState(), pss, new TransactionState(), new LambdaCollector()));
         }
 
         return newSpan;

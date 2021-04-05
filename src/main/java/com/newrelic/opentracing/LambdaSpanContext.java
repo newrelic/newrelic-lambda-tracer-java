@@ -5,6 +5,9 @@
 
 package com.newrelic.opentracing;
 
+import com.newrelic.opentracing.dt.DistributedTracePayload;
+import com.newrelic.opentracing.dt.DistributedTracePayloadImpl;
+import com.newrelic.opentracing.dt.DistributedTracing;
 import com.newrelic.opentracing.state.DistributedTracingState;
 import com.newrelic.opentracing.state.PrioritySamplingState;
 import com.newrelic.opentracing.state.TransactionState;
@@ -15,36 +18,26 @@ import java.util.Map;
 public class LambdaSpanContext implements SpanContext {
 
     private final LambdaSpan span;
-    private final LambdaScopeManager scopeManager;
+    private final DistributedTracingState distributedTracingState;
+    private final PrioritySamplingState prioritySamplingState;
+    private final TransactionState transactionState;
+    private final LambdaCollector lambdaCollector;
 
-    LambdaSpanContext(LambdaSpan span, LambdaScopeManager scopeManager) {
+    LambdaSpanContext(LambdaSpan span,
+                      DistributedTracingState distributedTracingState,
+                      PrioritySamplingState prioritySamplingState,
+                      TransactionState transactionState,
+                      LambdaCollector lambdaCollector) {
         this.span = span;
-        this.scopeManager = scopeManager;
-    }
-
-    public DistributedTracingState getDistributedTracingState() {
-        return scopeManager.dtState.get();
-    }
-
-    PrioritySamplingState getPrioritySamplingState() {
-        return scopeManager.priorityState.get();
-    }
-
-    public TransactionState getTransactionState() {
-        return scopeManager.txnState.get();
-    }
-
-    LambdaScopeManager getScopeManager() {
-        return scopeManager;
-    }
-
-    LambdaSpan getSpan() {
-        return span;
+        this.distributedTracingState = distributedTracingState;
+        this.prioritySamplingState = prioritySamplingState;
+        this.transactionState = transactionState;
+        this.lambdaCollector = lambdaCollector;
     }
 
     @Override
     public String toTraceId() {
-        return span.traceId();
+        return distributedTracingState.getTraceId();
     }
 
     @Override
@@ -54,11 +47,61 @@ public class LambdaSpanContext implements SpanContext {
 
     @Override
     public Iterable<Map.Entry<String, String>> baggageItems() {
-        return getDistributedTracingState().getBaggage().entrySet();
+        return distributedTracingState.getBaggage().entrySet();
     }
 
-    void spanFinished(LambdaSpan lambdaSpan) {
-        scopeManager.dataCollection.get().spanFinished(lambdaSpan);
+    public LambdaSpan getSpan() {
+        return span;
     }
 
+    public String getParentId() {
+        if (distributedTracingState != null) {
+            final DistributedTracePayloadImpl inboundPayload = distributedTracingState.getInboundPayload();
+            if (inboundPayload != null && inboundPayload.hasGuid()) {
+                return inboundPayload.getGuid();
+            }
+        }
+        return null;
+    }
+
+    public float getPriority() {
+        return prioritySamplingState.getPriority();
+    }
+
+    public boolean isSampled() {
+        return prioritySamplingState.isSampled();
+    }
+
+    public String getTransactionId() {
+        return transactionState.getTransactionId();
+    }
+
+    public Map<String, Object> getDistributedTracingAttributes() {
+        final DistributedTracing dt = DistributedTracing.getInstance();
+        return dt.getDistributedTracingAttributes(distributedTracingState, span.guid(), getPriority());
+    }
+
+    public void setError() {
+        transactionState.setError();
+    }
+
+    public void setTransactionDuration(float durationInSeconds) {
+        transactionState.setTransactionDuration(durationInSeconds);
+    }
+
+    public void setTransactionName(String transactionType, String name) {
+        transactionState.setTransactionName(transactionType, name);
+    }
+
+    public LambdaSpanContext newContext(LambdaSpan lambdaSpan) {
+        return new LambdaSpanContext(lambdaSpan, distributedTracingState, prioritySamplingState, transactionState, lambdaCollector);
+    }
+
+    public DistributedTracePayload createDistributedTracingPayload() {
+        return distributedTracingState.createDistributedTracingPayload(span);
+    }
+
+    public void collect() {
+        lambdaCollector.spanFinished(this, distributedTracingState, transactionState);
+    }
 }

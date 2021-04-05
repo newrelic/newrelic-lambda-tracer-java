@@ -6,6 +6,7 @@
 package com.newrelic.opentracing.dt;
 
 import com.newrelic.opentracing.LambdaSpan;
+import com.newrelic.opentracing.LambdaSpanContext;
 import com.newrelic.opentracing.TransportType;
 import com.newrelic.opentracing.state.DistributedTracingState;
 import com.newrelic.opentracing.util.DistributedTraceUtil;
@@ -118,9 +119,12 @@ public class DistributedTracing {
     }
 
     public DistributedTracePayloadImpl createDistributedTracePayload(LambdaSpan span) {
+        final LambdaSpanContext context = (LambdaSpanContext) span.context();
         return DistributedTracePayloadImpl
-                .createDistributedTracePayload(span.traceId(), span.guid(), span.getTransactionId(),
-                        span.priority());
+                .createDistributedTracePayload(context.toTraceId(),
+                        span.guid(),
+                        context.getTransactionId(),
+                        context.getPriority());
     }
 
     /**

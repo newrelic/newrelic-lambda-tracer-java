@@ -24,16 +24,16 @@ public class EncodingTest {
         tags.put("aws.lambda.coldStart", true);
 
         final LambdaSpan parent = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-                System.nanoTime(), tags, null, "parentGuid", "txnId");
+                System.nanoTime(), tags, null, "parentGuid");
 
         final LambdaSpan child = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-                System.nanoTime(), new HashMap<>(), parent, "childGuid", "txnId");
+                System.nanoTime(), new HashMap<>(), parent, "childGuid");
 
         final LambdaSpan grandChild = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-                System.nanoTime(), new HashMap<>(), child, "grandChildGuid", "txnId");
+                System.nanoTime(), new HashMap<>(), child, "grandChildGuid");
 
         final LambdaSpan greatGrandChild = SpanTestUtils.createSpan("operationName", System.currentTimeMillis(),
-                System.nanoTime(), new HashMap<>(), grandChild, "greatGrandChild", "txnId");
+                System.nanoTime(), new HashMap<>(), grandChild, "greatGrandChild");
 
         validate(parent);
         validate(child);

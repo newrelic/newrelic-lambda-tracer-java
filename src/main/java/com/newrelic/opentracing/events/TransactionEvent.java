@@ -10,6 +10,7 @@ import com.newrelic.opentracing.LambdaSpanContext;
 import com.newrelic.opentracing.dt.DistributedTracePayloadImpl;
 import com.newrelic.opentracing.dt.DistributedTracing;
 import com.newrelic.opentracing.state.DistributedTracingState;
+import com.newrelic.opentracing.state.TransactionState;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +19,9 @@ import java.util.Set;
 
 public class TransactionEvent extends Event {
 
-    private final Map<String, Object> intrinsics = new HashMap<>();
+    private static final int INTRINSIC_DEFAULT_CAPACITY = 32;
+
+    private final Map<String, Object> intrinsics = new HashMap<>(INTRINSIC_DEFAULT_CAPACITY);
     private final Map<String, Object> userAttributes = new HashMap<>();
     private final Map<String, Object> agentAttributes = new HashMap<>();
 
@@ -32,19 +35,18 @@ public class TransactionEvent extends Event {
         AGENT_ATTRIBUTE_KEYS.add("aws.requestId");
     }
 
-    public TransactionEvent(LambdaSpan span) {
+    public TransactionEvent(LambdaSpan span, TransactionState txnState, DistributedTracingState dtState) {
         intrinsics.put("type", "Transaction");
         intrinsics.put("timestamp", span.getTimestamp());
         intrinsics.put("duration", span.getDurationInSeconds());
 
         if (span.context() != null && span.context() instanceof LambdaSpanContext) {
             LambdaSpanContext context = (LambdaSpanContext) span.context();
-            intrinsics.put("name", context.getTransactionState().getTransactionName());
+            intrinsics.put("name", txnState.getTransactionName());
             final DistributedTracing dt = DistributedTracing.getInstance();
-            final DistributedTracingState distributedTracingState = context.getDistributedTracingState();
-            intrinsics.putAll(dt.getDistributedTracingAttributes(distributedTracingState, context.getTransactionState().getTransactionId(), span.priority()));
+            intrinsics.putAll(dt.getDistributedTracingAttributes(dtState, txnState.getTransactionId(), context.getPriority()));
 
-            final DistributedTracePayloadImpl inboundPayload = distributedTracingState.getInboundPayload();
+            final DistributedTracePayloadImpl inboundPayload = dtState.getInboundPayload();
             if (inboundPayload != null && inboundPayload.hasTransactionId()) {
                 //  TransactionEvents parent other TransactionEvents
                 intrinsics.put("parentId", inboundPayload.getTransactionId());
@@ -54,7 +56,7 @@ public class TransactionEvent extends Event {
                 }
             }
 
-            if (context.getTransactionState().hasError()) {
+            if (txnState.hasError()) {
                 agentAttributes.put("error", true);
             }
         }

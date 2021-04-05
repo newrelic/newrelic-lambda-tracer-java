@@ -13,6 +13,9 @@ import com.newrelic.opentracing.SpanTestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.newrelic.opentracing.state.DistributedTracingState;
+import com.newrelic.opentracing.state.TransactionState;
 import org.junit.jupiter.api.Test;
 
 class TransactionEventTest {
@@ -24,8 +27,10 @@ class TransactionEventTest {
         tags.put("one", 1);
         tags.put("tagThree", "value");
 
-        final LambdaSpan span = SpanTestUtils.createSpan("fetch", System.currentTimeMillis(), System.nanoTime(), tags, null, "guid", "txnId");
-        final TransactionEvent transactionEvent = new TransactionEvent(span);
+        final LambdaSpan span = SpanTestUtils.createSpan("fetch", System.currentTimeMillis(), System.nanoTime(), tags, null, "guid");
+        TransactionState txnState = new TransactionState();
+        DistributedTracingState dtState = new DistributedTracingState();
+        final TransactionEvent transactionEvent = new TransactionEvent(span, txnState, dtState);
 
         assertEquals("hello", transactionEvent.getUserAttributes().get("world"));
         assertEquals(1, transactionEvent.getUserAttributes().get("one"));

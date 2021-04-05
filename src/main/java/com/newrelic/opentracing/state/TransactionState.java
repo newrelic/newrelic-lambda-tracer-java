@@ -7,19 +7,15 @@ package com.newrelic.opentracing.state;
 
 import com.newrelic.opentracing.util.DistributedTraceUtil;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class TransactionState {
 
-    private final AtomicReference<String> transactionId = new AtomicReference<>(DistributedTraceUtil.generateGuid());
-    private final AtomicReference<Float> transactionDuration = new AtomicReference<>(0.0f);
-    private final AtomicBoolean error = new AtomicBoolean(false);
-
-    private String transactionName;
+    private final String transactionId = DistributedTraceUtil.generateGuid();
+    private volatile float transactionDuration = 0f;
+    private volatile boolean error = false;
+    private volatile String transactionName;
 
     public String getTransactionId() {
-        return transactionId.get();
+        return transactionId;
     }
 
     public void setTransactionName(String transactionType, String functionName) {
@@ -31,19 +27,19 @@ public class TransactionState {
     }
 
     public float getTransactionDuration() {
-        return transactionDuration.get();
+        return transactionDuration;
     }
 
     public void setTransactionDuration(float transactionDuration) {
-        this.transactionDuration.set(transactionDuration);
+        this.transactionDuration = transactionDuration;
     }
 
     public void setError() {
-        error.compareAndSet(false, true);
+        error = true;
     }
 
     public boolean hasError() {
-        return error.get();
+        return error;
     }
 
 }

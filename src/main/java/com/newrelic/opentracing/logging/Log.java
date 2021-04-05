@@ -19,7 +19,7 @@ public class Log {
 
         static {
             String debug = System.getenv("NEW_RELIC_DEBUG");
-            if (debug != null && debug.toLowerCase().equals("true")) {
+            if (debug != null && debug.equalsIgnoreCase("true")) {
                 instance = new DebugLogger();
             } else {
                 instance = new ConsoleLogger();
