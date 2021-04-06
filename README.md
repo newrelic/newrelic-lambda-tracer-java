@@ -21,20 +21,18 @@ The example below shows how to add them as dependencies in your `build.gradle` f
 
 ```groovy
 dependencies {
-    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.1.2")
+    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.2.0")
     implementation("com.newrelic.opentracing:java-aws-lambda:2.1.0")
 }
 ```
 
 ## Supported OpenTracing versions
 
-The New Relic Lambda Tracer and SDK support different versions of OpenTracing as detailed below: 
+The New Relic Lambda Tracer and SDK supports version 0.33.0 of OpenTracing as detailed below: 
 
-* OpenTracing `0.31.0`: 
-  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:1.1.1](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda)
-  * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:1.0.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda) 
-* OpenTracing `0.32.0`, `0.33.0`:
-  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.1.2](https://search.maven.org/artifact/com.newrelic.opentracing/newrelic-java-lambda)
+* OpenTracing `0.33.0`:
+  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.2.0](https://search.maven.org/artifact/com.
+    newrelic.opentracing/newrelic-java-lambda)
   * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:2.1.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda) 
 
 ## Getting Started
