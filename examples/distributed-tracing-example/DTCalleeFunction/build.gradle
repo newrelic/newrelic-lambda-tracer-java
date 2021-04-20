@@ -15,7 +15,7 @@ java {
 dependencies {
     // New Relic AWS Lambda OpenTracing instrumentation
     implementation('com.newrelic.opentracing:java-aws-lambda:2.1.0')
-    implementation('com.newrelic.opentracing:newrelic-java-lambda:2.2.1')
+    implementation('com.newrelic.opentracing:newrelic-java-lambda:2.2.0')
 
     // OpenTracing
     implementation('io.opentracing:opentracing-util:0.33.0')
