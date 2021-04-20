@@ -21,7 +21,7 @@ The example below shows how to add them as dependencies in your `build.gradle` f
 
 ```groovy
 dependencies {
-    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.2.0")
+    implementation("com.newrelic.opentracing:newrelic-java-lambda:2.2.1")
     implementation("com.newrelic.opentracing:java-aws-lambda:2.1.0")
 }
 ```
@@ -31,7 +31,7 @@ dependencies {
 The New Relic Lambda Tracer and SDK supports version 0.33.0 of OpenTracing as detailed below: 
 
 * OpenTracing `0.33.0`:
-  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.2.0](https://search.maven.org/artifact/com.
+  * Lambda Tracer: [com.newrelic.opentracing:newrelic-java-lambda:2.2.1](https://search.maven.org/artifact/com.
     newrelic.opentracing/newrelic-java-lambda)
   * Lambda SDK: [com.newrelic.opentracing:java-aws-lambda:2.1.0](https://search.maven.org/artifact/com.newrelic.opentracing/java-aws-lambda) 
 

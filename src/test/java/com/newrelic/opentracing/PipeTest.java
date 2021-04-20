@@ -1,7 +1,5 @@
 package com.newrelic.opentracing;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.newrelic.opentracing.pipe.NrTelemetryPipe;
 
 import java.io.BufferedReader;
@@ -14,14 +12,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PipeTest {
 
-    File testPayloadPipe = new File("/tmp/newrelic-telemetry-test");
+    private final File testPayloadPipe = new File("/tmp/newrelic-telemetry-test");
+    private boolean shouldDeleteParent = false;
 
     @BeforeEach
     void createPipe() throws IOException {
-        testPayloadPipe.getParentFile().mkdir();
+        shouldDeleteParent = testPayloadPipe.getParentFile().mkdir();
         testPayloadPipe.createNewFile();
     }
 
@@ -32,19 +33,24 @@ public class PipeTest {
         try {
             nrTelemetryPipe.writeToPipe(payload);
         } catch (IOException e) {
+            fail(e);
         }
 
         BufferedReader br = new BufferedReader(new FileReader(testPayloadPipe));
         assertTrue(nrTelemetryPipe.namedPipeExists());
-        assertTrue(br.readLine().equals(payload));
+        assertEquals(br.readLine(), payload);
     }
 
     @AfterEach
     void deletePipe() {
-        File[] listFiles = testPayloadPipe.getParentFile().listFiles();
-        for (File file : listFiles) {
-            file.delete();
+        assertTrue(testPayloadPipe.delete());
+        if (shouldDeleteParent) {
+            final File parentFile = testPayloadPipe.getParentFile();
+            File[] listFiles = parentFile.listFiles();
+            for (File file : listFiles) {
+                file.delete();
+            }
+            parentFile.delete();
         }
-        testPayloadPipe.getParentFile().delete();
     }
 }
