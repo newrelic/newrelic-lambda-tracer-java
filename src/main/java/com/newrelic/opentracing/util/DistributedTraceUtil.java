@@ -7,15 +7,9 @@ package com.newrelic.opentracing.util;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class DistributedTraceUtil {
-
-    /**
-     * A thread local which holds a {@link Random} whose seed is the thread id.
-     */
-    public static final ThreadLocalRandom random = ThreadLocalRandom.current();
 
     // Payload constants
     public static final String VERSION = "v";
@@ -52,7 +46,7 @@ public class DistributedTraceUtil {
 
     // Note that the digits are generated in "reverse order", which is perfectly fine here.
     public static String generateGuid() {
-        long random = DistributedTraceUtil.random.nextLong();
+        long random = ThreadLocalRandom.current().nextLong();
         char[] result = new char[16];
         for (int i = 0; i < 16; ++i) {
             result[i] = hexchars[(int) (random & 0xF)];
@@ -68,7 +62,7 @@ public class DistributedTraceUtil {
     public static float nextTruncatedFloat() {
         float next = 0.0f;
         try {
-            next = Float.parseFloat(FORMATTER.get().format(DistributedTraceUtil.random.nextFloat()).replace(',', '.'));
+            next = Float.parseFloat(FORMATTER.get().format(ThreadLocalRandom.current().nextFloat()).replace(',', '.'));
         } catch (NumberFormatException e) {
         }
         return next;

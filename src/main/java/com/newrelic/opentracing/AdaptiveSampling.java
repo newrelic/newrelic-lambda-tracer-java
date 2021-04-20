@@ -5,8 +5,7 @@
 
 package com.newrelic.opentracing;
 
-import com.newrelic.opentracing.util.DistributedTraceUtil;
-
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -44,10 +43,10 @@ class AdaptiveSampling {
         if (firstPeriod) {
             sampled = sampledTrueCount.get() < target;
         } else if (sampledTrueCount.get() < target) {
-            sampled = DistributedTraceUtil.random.nextLong(decidedCountLast.get()) < target;
+            sampled = ThreadLocalRandom.current().nextLong(decidedCountLast.get()) < target;
         } else {
             final double expTarget = Math.pow(target, (target * 1.0f / sampledTrueCount.get())) - Math.sqrt(target);
-            sampled = DistributedTraceUtil.random.nextLong(decidedCount.get()) < expTarget;
+            sampled = ThreadLocalRandom.current().nextLong(decidedCount.get()) < expTarget;
         }
 
         decidedCount.incrementAndGet();
