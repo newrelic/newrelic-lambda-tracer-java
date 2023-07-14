@@ -1,4 +1,4 @@
-[![Community Plus header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Community_Plus.png)](https://opensource.newrelic.com/oss-category/#community-plus)
+<a href="https://opensource.newrelic.com/oss-category/#community-plus"><picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/dark/Community_Plus.png"><source media="(prefers-color-scheme: light)" srcset="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/Community_Plus.png"><img alt="New Relic Open Source community plus project banner." src="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/Community_Plus.png"></picture></a>
 
 # New Relic OpenTracing Tracer for AWS Lambda Java
 
@@ -254,7 +254,7 @@ To enable debug logging set the `NEW_RELIC_DEBUG` environment variable to `true`
 
 New Relic hosts and moderates an online forum where customers can interact with New Relic employees as well as other customers to get help and share best practices. Like all official New Relic open source projects, there's a related Community topic in the New Relic Explorers Hub. You can find this project's topic/threads here:
 
-https://discuss.newrelic.com/tags/javaagent
+[Java Agent Support Forum](https://forum.newrelic.com/s/hubtopic/Topic__c/Default?c__categories=%5B%7B%22icon%22%3A%22standard%3Adefault%22%2C%22id%22%3A%22a6c8W000000EesiQAC%22%2C%22sObjectType%22%3A%22Category__c%22%2C%22title%22%3A%22Java%20Agent%22%2C%22titleFormatted%22%3A%22Java%20Agent%22%7D%5D)
 
 ## Contributing
 
