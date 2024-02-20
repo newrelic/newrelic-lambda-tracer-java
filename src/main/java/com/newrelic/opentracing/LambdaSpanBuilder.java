@@ -122,10 +122,7 @@ public class LambdaSpanBuilder implements Tracer.SpanBuilder {
             // Our parent context is extracted from a cross-process trace context. New root span.
             final LambdaPayloadContext payloadContext = (LambdaPayloadContext) parentSpanContext;
             final DistributedTracePayloadImpl dtPayload = payloadContext.getPayload();
-            final PrioritySamplingState prioritySamplingState = new PrioritySamplingState(
-                    dtPayload.getPriority(),
-                    dtPayload.isSampled()
-            );
+            final PrioritySamplingState prioritySamplingState = PrioritySamplingState.create(dtPayload);
 
             final DistributedTracingState distributedTracingState = new DistributedTracingState(payloadContext);
             TransactionState transactionState = new TransactionState();
