@@ -252,7 +252,7 @@ To enable debug logging set the `NEW_RELIC_DEBUG` environment variable to `true`
 
 ## Compatability Issues
 
-If customers are using `com.amazonaws:aws-lambda-java-events:2.7` or earlier versions directly or indirectly (via another AWS dependency), you may notice missing fields from `DynamodbEvent` objects in your request handler. To resolve this issue, please upgrade your dependencies so that you are running on a later version of `com.amazonaws:aws-lambda-java-events`.
+If customers are using `com.amazonaws:aws-lambda-java-events:2.X.X` or earlier versions directly or indirectly (via another AWS dependency), you may notice missing fields from `DynamodbEvent` objects in your request handler. To resolve this issue, please upgrade your dependencies so that you are running on a later version of `com.amazonaws:aws-lambda-java-events`.
 
 ## Support
 
