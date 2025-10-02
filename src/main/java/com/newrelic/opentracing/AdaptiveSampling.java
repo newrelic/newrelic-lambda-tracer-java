@@ -43,7 +43,8 @@ class AdaptiveSampling {
         if (firstPeriod) {
             sampled = sampledTrueCount.get() < target;
         } else if (sampledTrueCount.get() < target) {
-            sampled = ThreadLocalRandom.current().nextLong(decidedCountLast.get()) < target;
+            final long count = decidedCountLast.get();
+            sampled = count == 0 || ThreadLocalRandom.current().nextLong(count) < target;
         } else {
             final double expTarget = Math.pow(target, (target * 1.0f / sampledTrueCount.get())) - Math.sqrt(target);
             sampled = ThreadLocalRandom.current().nextLong(decidedCount.get()) < expTarget;
