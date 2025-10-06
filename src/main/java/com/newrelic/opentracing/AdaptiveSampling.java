@@ -46,8 +46,9 @@ class AdaptiveSampling {
             final long count = decidedCountLast.get();
             sampled = count == 0 || ThreadLocalRandom.current().nextLong(count) < target;
         } else {
+            final long count = decidedCount.get();
             final double expTarget = Math.pow(target, (target * 1.0f / sampledTrueCount.get())) - Math.sqrt(target);
-            sampled = ThreadLocalRandom.current().nextLong(decidedCount.get()) < expTarget;
+            sampled = count == 0 || ThreadLocalRandom.current().nextLong(count) < expTarget;
         }
 
         decidedCount.incrementAndGet();
