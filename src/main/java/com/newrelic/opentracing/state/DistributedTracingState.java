@@ -30,10 +30,14 @@ public class DistributedTracingState {
     }
 
     public DistributedTracingState() {
+        this(0L);
+    }
+
+    public DistributedTracingState(long requestSalt) {
         inboundPayload = null;
         transportTimeMillis = Long.MIN_VALUE;
         this.baggage = Collections.emptyMap();
-        traceId = DistributedTraceUtil.generateGuid();
+        traceId = DistributedTraceUtil.generateGuid(requestSalt);
     }
 
     public DistributedTracePayloadImpl getInboundPayload() {
