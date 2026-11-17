@@ -76,6 +76,10 @@ public class LambdaSpanContext implements SpanContext {
         return transactionState.getTransactionId();
     }
 
+    public long getRequestSalt() {
+        return transactionState.getRequestSalt();
+    }
+
     public Map<String, Object> getDistributedTracingAttributes() {
         final DistributedTracing dt = DistributedTracing.getInstance();
         return dt.getDistributedTracingAttributes(distributedTracingState, span.guid(), getPriority());

@@ -125,24 +125,28 @@ public class LambdaSpanBuilder implements Tracer.SpanBuilder {
             final PrioritySamplingState prioritySamplingState = PrioritySamplingState.create(dtPayload);
 
             final DistributedTracingState distributedTracingState = new DistributedTracingState(payloadContext);
-            TransactionState transactionState = new TransactionState();
+            TransactionState transactionState = new TransactionState(tags.get("aws.requestId"));
 
-            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null, DistributedTraceUtil.generateGuid());
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null,
+                    DistributedTraceUtil.generateGuid(transactionState.getRequestSalt()));
             LambdaSpanContext spanContext = new LambdaSpanContext(newSpan, distributedTracingState, prioritySamplingState, transactionState, new LambdaCollector());
             newSpan.setContext(spanContext);
         } else if (parentSpanContext instanceof LambdaSpanContext) {
             // Our parent context is a normal, local span context
             final LambdaSpanContext lambdaSpanContext = (LambdaSpanContext) parentSpanContext;
             LambdaSpan parentSpan = lambdaSpanContext.getSpan();
-            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, parentSpan, DistributedTraceUtil.generateGuid());
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, parentSpan,
+                    DistributedTraceUtil.generateGuid(lambdaSpanContext.getRequestSalt()));
             newSpan.setContext(lambdaSpanContext.newContext(newSpan));
         } else {
             // We have no parent context. New root span, new trace.
-            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null, DistributedTraceUtil.generateGuid());
+            TransactionState transactionState = new TransactionState(tags.get("aws.requestId"));
+            newSpan = new LambdaSpan(operationName, timestamp, startTimeInNanos, tags, null,
+                    DistributedTraceUtil.generateGuid(transactionState.getRequestSalt()));
             final AdaptiveSampling adaptiveSampling = tracer.adaptiveSampling();
             adaptiveSampling.requestStarted();
             final PrioritySamplingState pss = PrioritySamplingState.setSampledAndGeneratePriority(adaptiveSampling.computeSampled());
-            newSpan.setContext(new LambdaSpanContext(newSpan, new DistributedTracingState(), pss, new TransactionState(), new LambdaCollector()));
+            newSpan.setContext(new LambdaSpanContext(newSpan, new DistributedTracingState(transactionState.getRequestSalt()), pss, transactionState, new LambdaCollector()));
         }
 
         return newSpan;

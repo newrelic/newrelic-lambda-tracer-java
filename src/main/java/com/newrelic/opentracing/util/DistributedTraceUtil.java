@@ -46,7 +46,20 @@ public class DistributedTraceUtil {
 
     // Note that the digits are generated in "reverse order", which is perfectly fine here.
     public static String generateGuid() {
-        long random = ThreadLocalRandom.current().nextLong();
+        return generateGuid(0L);
+    }
+
+    /**
+     * Generate a GUID, using the given salt value. For this component, the salt
+     * will be generated from the AWS request ID so that a reused ThreadLocalRandom sequence
+     * (from a CRaC restore, for example) doesn't duplicate values.
+     *
+     * @param salt the salt value to use
+     *
+     * @return a new GUID
+     */
+    public static String generateGuid(long salt) {
+        long random = ThreadLocalRandom.current().nextLong() ^ salt;
         char[] result = new char[16];
         for (int i = 0; i < 16; ++i) {
             result[i] = hexchars[(int) (random & 0xF)];
